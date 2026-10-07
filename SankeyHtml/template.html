@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sankey Flow Builder</title>
+<style>
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#1f2937; --muted:#6b7280; --line:#e2e6ec; --accent:#1f6fb5; --accent-ink:#ffffff; --accent-soft:#e6f0fa;
+  --radius:10px; --shadow:0 1px 2px rgba(16,24,40,.06),0 2px 8px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#14181d; --panel:#1d232b; --ink:#e5e9ef; --muted:#97a3b3; --line:#2c3541; --accent:#4a9ae0; --accent-ink:#0b1117; --accent-soft:#1e3047; --shadow:0 1px 2px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;display:flex;flex-direction:column}
+header.top{display:flex;align-items:baseline;gap:14px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+header.top h1{font-size:17px;margin:0;font-weight:650}
+header.top .sub{color:var(--muted);font-size:12.5px}
+.app{flex:1;display:grid;grid-template-columns:340px 1fr;min-height:0}
+aside.side{background:var(--panel);border-right:1px solid var(--line);overflow:auto;padding:8px 14px 24px}
+main.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+details{border-bottom:1px solid var(--line);padding:6px 0}
+summary{cursor:pointer;font-weight:600;padding:8px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"\25B8";color:var(--muted);transition:transform .15s}
+details[open]>summary::after{transform:rotate(90deg)}
+.row{display:grid;grid-template-columns:112px 1fr;gap:8px;align-items:center;margin:7px 0}
+.row label{color:var(--muted);font-size:12.5px}
+.row.chk{grid-template-columns:1fr auto}
+.row .val{display:flex;gap:8px;align-items:center}
+.row output{min-width:30px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+input[type=text],input[type=number],select,textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font:inherit}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=color]{width:42px;height:30px;padding:0;border:1px solid var(--line);border-radius:7px;background:none}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 11px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.drop{display:block;border:2px dashed var(--line);border-radius:var(--radius);padding:14px;text-align:center;color:var(--muted);cursor:pointer;margin:8px 0}
+.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.small{font-size:12px;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.stage{flex:1;overflow:auto;padding:18px;min-height:0}
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);display:inline-block;line-height:0}
+svg#chart{display:block;font-family:"Segoe UI",system-ui,sans-serif}
+svg#chart.crop{cursor:crosshair;touch-action:none}
+.hint{padding:6px 16px 10px;color:var(--muted);font-size:12.5px}
+table.data{border-collapse:collapse;width:100%;font-size:12.5px}
+table.data th,table.data td{border:1px solid var(--line);padding:3px 6px;text-align:left;white-space:nowrap}
+table.data th{background:var(--bg);position:sticky;top:0}
+table.data td[contenteditable]:focus{outline:2px solid var(--accent);background:var(--accent-soft)}
+table.data td.x{width:22px;text-align:center;color:var(--muted);cursor:pointer}
+.tablewrap{max-height:260px;overflow:auto;border-radius:7px}
+#tip{position:fixed;pointer-events:none;background:#111827;color:#fff;padding:7px 10px;border-radius:7px;font-size:12.5px;line-height:1.4;z-index:20;display:none;max-width:280px;white-space:pre-line}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#111827;color:#fff;padding:9px 16px;border-radius:9px;opacity:0;transition:opacity .2s;z-index:30;pointer-events:none}
+#toast.show{opacity:1}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:18px;width:min(560px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog textarea{height:200px;font-family:Consolas,monospace;font-size:12.5px}
+#nodePanel{background:var(--accent-soft);border-radius:var(--radius);padding:4px 12px 10px;margin:10px 0}
+#nodePanel h4{margin:8px 0 2px}
+@media (max-width:860px){.app{grid-template-columns:1fr}aside.side{max-height:46vh;border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header class="top"><h1>Sankey Flow Builder</h1><span class="sub">Upload From / To / Value data &middot; drag nodes &middot; copy or export as PNG</span></header>
+<div class="app">
+<aside class="side">
+
+  <details open><summary>1 &middot; Data</summary>
+    <label class="drop" id="drop">Drop a <b>CSV / TSV / XLSX</b> file here<br><span class="small">or click to browse &middot; columns: From, To, Value</span>
+      <input id="file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xlsm" hidden></label>
+    <div class="btns"><button id="btnPaste">Paste data&hellip;</button><button id="btnSample">Sample data</button></div>
+    <div class="row" id="sheetRow" hidden><label>Sheet</label><select id="sheetSel"></select></div>
+    <div class="small" id="dataInfo"></div>
+    <div class="row"><label>From column</label><select id="mapFrom"></select></div>
+    <div class="row"><label>To column</label><select id="mapTo"></select></div>
+    <div class="row"><label>Value column</label><select id="mapVal"></select></div>
+    <div class="btns"><button id="btnSwap" title="Reverse the direction of all flows">&#8646; Swap From / To</button></div>
+    <div class="row"><label>Hide flows &lt;</label><div class="val"><input type="range" data-k="minValue" min="0" max="100" step="1"><output data-for="minValue"></output></div></div>
+    <details><summary style="font-weight:500">Edit data table</summary>
+      <div class="tablewrap"><table class="data" id="dataTable"></table></div>
+      <div class="btns"><button id="btnAddRow">+ Add row</button><span class="small" id="tblNote"></span></div>
+    </details>
+  </details>
+
+  <details open><summary>2 &middot; Title</summary>
+    <div class="row"><label>Title</label><input type="text" data-k="title" placeholder="Chart title"></div>
+    <div class="row"><label>Subtitle</label><input type="text" data-k="subtitle" placeholder="Optional description"></div>
+  </details>
+
+  <details open><summary>3 &middot; Colors</summary>
+    <div class="row"><label>Palette</label><select data-k="palette">
+      <option value="corporate">Corporate</option><option value="vibrant">Vibrant</option><option value="pastel">Pastel</option>
+      <option value="earth">Earth</option><option value="ocean">Ocean</option><option value="custom">Custom palette</option></select></div>
+    <div class="row" id="customRow" hidden><label>Hex colors</label><input type="text" data-k="customPalette" placeholder="#E4002B, #1F4E79, ..."></div>
+    <div class="row"><label>Flow style</label><select data-k="linkStyle"><option value="gradient">Gradient</option><option value="solid">Solid (source color)</option><option value="gray">Gray</option></select></div>
+    <div class="row"><label>Flow opacity</label><div class="val"><input type="range" data-k="opacity" min="5" max="100"><output data-for="opacity"></output></div></div>
+    <div class="row"><label>Background</label><select data-k="bg"><option value="white">White</option><option value="transparent">Transparent (PNG)</option></select></div>
+    <div class="small">Click a node in the chart to change its color individually.</div>
+    <div id="nodePanel" hidden>
+      <h4 id="nodeName"></h4>
+      <div class="row"><label>Node color</label><div class="val"><input type="color" id="nodeColor"><button id="btnNodeColorReset">Reset</button></div></div>
+      <div class="btns"><button id="btnNodePosReset">Reset position</button><button id="btnNodeDeselect">Done</button></div>
+    </div>
+  </details>
+
+  <details><summary>4 &middot; Layout</summary>
+    <div class="row"><label>Node width</label><div class="val"><input type="range" data-k="nodeWidth" min="4" max="50"><output data-for="nodeWidth"></output></div></div>
+    <div class="row"><label>Node spacing</label><div class="val"><input type="range" data-k="nodePadding" min="0" max="60"><output data-for="nodePadding"></output></div></div>
+    <div class="row"><label>Alignment</label><select data-k="align"><option value="justify">Justify</option><option value="left">Left</option><option value="right">Right</option><option value="center">Center</option></select></div>
+    <div class="row"><label>Width (px)</label><input type="number" data-k="width" min="0" step="10" placeholder="0 = fit window"></div>
+    <div class="row"><label>Height (px)</label><input type="number" data-k="height" min="0" step="10" placeholder="0 = fit window"></div>
+    <div class="btns"><button id="btnResetPos">Reset dragged positions</button></div>
+  </details>
+
+  <details><summary>5 &middot; Labels &amp; numbers</summary>
+    <div class="row chk"><label>Show labels</label><input type="checkbox" data-k="showLabels"></div>
+    <div class="row chk"><label>Show values</label><input type="checkbox" data-k="showValues"></div>
+    <div class="row"><label>Text size</label><div class="val"><input type="range" data-k="fontSize" min="8" max="28"><output data-for="fontSize"></output></div></div>
+    <div class="row"><label>Label side</label><select data-k="labelPos"><option value="auto">Auto</option><option value="right">Always right</option><option value="left">Always left</option></select></div>
+    <div class="row"><label>Number format</label><select data-k="numFmt"><option value="auto">Auto</option><option value="0">0 decimals</option><option value="1">1 decimal</option><option value="2">2 decimals</option><option value="compact">Compact (1.2K)</option></select></div>
+    <div class="row"><label>Unit</label><input type="text" data-k="unit" placeholder="e.g. EUR, kg"></div>
+  </details>
+
+  <details open><summary>6 &middot; Export</summary>
+    <div class="row"><label>PNG scale</label><select data-k="scale"><option value="1">1&times; (screen)</option><option value="2">2&times; (sharp)</option><option value="3">3&times; (print)</option></select></div>
+    <div class="row"><label>File name</label><input type="text" data-k="fileName" placeholder="sankey"></div>
+    <div class="btns"><button class="primary" id="btnCopy2">Copy PNG</button><button id="btnPng2">Export PNG</button><button id="btnSvg2">Export SVG</button></div>
+  </details>
+</aside>
+
+<main class="main">
+  <div class="toolbar">
+    <button id="btnUpload">&#128194; Upload</button>
+    <span class="sep"></span>
+    <button id="btnCrop" title="Drag a rectangle on the chart; copy/export then uses only that area">&#9986; Select area</button>
+    <button id="btnCropClear" disabled>Clear selection</button>
+    <span class="sep"></span>
+    <button class="primary" id="btnCopy">Copy PNG</button>
+    <button id="btnPng">Export PNG</button>
+    <button id="btnSvg">Export SVG</button>
+  </div>
+  <div class="stage" id="stage"><div class="card" id="card"><svg id="chart" role="img" aria-label="Sankey diagram"></svg></div></div>
+  <div class="hint" id="hint">Drag any node to move it &middot; click a node to recolor it &middot; hover to highlight flows &middot; Ctrl+C copies the chart as PNG.</div>
+</main>
+</div>
+
+<dialog id="pasteDlg">
+  <h3 style="margin:0 0 6px">Paste data</h3>
+  <p class="small" style="margin:0 0 8px">Copy cells from Excel (or any table) including the header, and paste below. Columns: From, To, Value.</p>
+  <textarea id="pasteText" placeholder="From&#9;To&#9;Value&#10;Salary&#9;Budget&#9;5000"></textarea>
+  <div class="btns" style="justify-content:flex-end"><button id="pasteCancel">Cancel</button><button class="primary" id="pasteOk">Use data</button></div>
+</dialog>
+<div id="tip"></div><div id="toast"></div>
+
+<script>
+/*__BUNDLE__*/
+</script>
+</body>
+</html>

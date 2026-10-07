@@ -1,0 +1,7 @@
+* text=auto
+*.bas text eol=crlf
+*.cls text eol=crlf
+*.ps1 text eol=crlf
+*.pbiviz binary
+*.xlsx binary
+*.png binary

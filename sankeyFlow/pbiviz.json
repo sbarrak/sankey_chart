@@ -1,0 +1,26 @@
+{
+  "visual": {
+    "name": "sankeyFlow",
+    "displayName": "Sankey Flow",
+    "guid": "sankeyFlowC038E520B8A14431B0A1AC5AC335B7A6",
+    "visualClassName": "Visual",
+    "version": "1.0.0.0",
+    "description": "Sankey (flow) diagram with palettes, report-theme colors, custom brand palettes, per-node colors and cross-highlighting. Fields: Source, Target, Value.",
+    "supportUrl": "https://learn.microsoft.com/power-bi/developer/visuals/",
+    "gitHubUrl": ""
+  },
+  "apiVersion": "5.11.1",
+  "author": {
+    "name": "sbarrak",
+    "email": "sbarrak@gmail.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": null,
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": null,
+  "stringResources": [],
+  "version": "1.0.0.0"
+}

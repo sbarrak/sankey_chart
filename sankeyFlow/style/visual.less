@@ -1,0 +1,18 @@
+.sankey {
+    display: block;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", sans-serif;
+    user-select: none;
+
+    .link {
+        cursor: pointer;
+        transition: stroke-opacity 0.15s;
+
+        &:hover {
+            stroke-opacity: 0.85;
+        }
+    }
+
+    .node {
+        shape-rendering: crispEdges;
+    }
+}

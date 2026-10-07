@@ -1,0 +1,83 @@
+{
+    "dataRoles": [
+        { "displayName": "Source", "name": "source", "kind": "Grouping" },
+        { "displayName": "Target", "name": "target", "kind": "Grouping" },
+        { "displayName": "Value", "name": "value", "kind": "Measure" }
+    ],
+    "objects": {
+        "colors": {
+            "displayName": "Colors",
+            "properties": {
+                "palette": {
+                    "displayName": "Palette",
+                    "type": {
+                        "enumeration": [
+                            { "value": "corporate", "displayName": "Corporate" },
+                            { "value": "vibrant", "displayName": "Vibrant" },
+                            { "value": "pastel", "displayName": "Pastel" },
+                            { "value": "earth", "displayName": "Earth" },
+                            { "value": "ocean", "displayName": "Ocean" },
+                            { "value": "theme", "displayName": "Report theme" },
+                            { "value": "custom", "displayName": "Custom palette" }
+                        ]
+                    }
+                },
+                "customPalette": { "displayName": "Custom palette (hex list)", "type": { "text": true } },
+                "nodeColors": { "displayName": "Node colors (Name=#hex; ...)", "type": { "text": true } },
+                "linkStyle": {
+                    "displayName": "Flow style",
+                    "type": {
+                        "enumeration": [
+                            { "value": "gradient", "displayName": "Gradient" },
+                            { "value": "solid", "displayName": "Solid (source color)" },
+                            { "value": "gray", "displayName": "Gray" }
+                        ]
+                    }
+                },
+                "linkOpacity": { "displayName": "Flow opacity (%)", "type": { "numeric": true } }
+            }
+        },
+        "layout": {
+            "displayName": "Layout",
+            "properties": {
+                "nodeWidth": { "displayName": "Node width", "type": { "numeric": true } },
+                "nodePadding": { "displayName": "Node spacing", "type": { "numeric": true } },
+                "align": {
+                    "displayName": "Alignment",
+                    "type": {
+                        "enumeration": [
+                            { "value": "justify", "displayName": "Justify" },
+                            { "value": "left", "displayName": "Left" },
+                            { "value": "right", "displayName": "Right" },
+                            { "value": "center", "displayName": "Center" }
+                        ]
+                    }
+                }
+            }
+        },
+        "labels": {
+            "displayName": "Labels",
+            "properties": {
+                "show": { "displayName": "Show labels", "type": { "bool": true } },
+                "showValues": { "displayName": "Show values", "type": { "bool": true } },
+                "fontSize": { "displayName": "Text size", "type": { "numeric": true } },
+                "unit": { "displayName": "Unit", "type": { "text": true } }
+            }
+        }
+    },
+    "dataViewMappings": [
+        {
+            "table": {
+                "rows": {
+                    "select": [
+                        { "for": { "in": "source" } },
+                        { "for": { "in": "target" } },
+                        { "for": { "in": "value" } }
+                    ],
+                    "dataReductionAlgorithm": { "window": { "count": 30000 } }
+                }
+            }
+        }
+    ],
+    "privileges": []
+}

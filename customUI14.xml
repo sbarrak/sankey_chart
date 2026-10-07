@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Rib_OnLoad">
+  <ribbon>
+    <tabs>
+      <tab id="tabSankey" label="Sankey" insertAfterMso="TabHome">
+
+        <group id="grpChart" label="Chart">
+          <button id="btnCreate" label="Create / Update" size="large" imageMso="ChartInsert"
+                  onAction="Rib_Button"
+                  screentip="Create or update the Sankey chart"
+                  supertip="Select a table with three columns (From, To, Value) - or click one cell inside it - and press this button. If a chart already exists on the sheet it is rebuilt from its source table."/>
+          <button id="btnDelete" label="Delete" size="large" imageMso="Delete"
+                  onAction="Rib_Button"
+                  screentip="Delete the chart"
+                  supertip="Removes the Sankey chart from the active sheet and stops auto-updating it. Your data is not touched."/>
+        </group>
+
+        <group id="grpDesign" label="Design">
+          <editBox id="edtTitle" label="Title:" sizeString="WWWWWWWWWWWWWWWW"
+                   getText="Rib_GetText" onChange="Rib_SetText"
+                   screentip="Chart title"
+                   supertip="Shown at the top-left of the chart. Leave empty for no title."/>
+          <editBox id="edtSub" label="Subtitle:" sizeString="WWWWWWWWWWWWWWWW"
+                   getText="Rib_GetText" onChange="Rib_SetText"
+                   screentip="Chart subtitle"
+                   supertip="A short description shown under the title. Leave empty for none."/>
+          <dropDown id="ddTheme" label="Colors:" sizeString="WWWWWWWWWWWW"
+                    getSelectedItemIndex="Rib_GetIndex" onAction="Rib_SetIndex"
+                    screentip="Color theme"
+                    supertip="Palette used for nodes and flows. 'Workbook theme' uses the colors applied under Page Layout > Colors (e.g. your company palette). 'Custom palette' uses colors imported with Import palette.">
+            <item id="th1" label="Corporate"/>
+            <item id="th2" label="Vibrant"/>
+            <item id="th3" label="Pastel"/>
+            <item id="th4" label="Earth"/>
+            <item id="th5" label="Ocean"/>
+            <item id="th6" label="Workbook theme"/>
+            <item id="th7" label="Custom palette"/>
+          </dropDown>
+          <dropDown id="ddLink" label="Flows:" sizeString="WWWWWWWWWWWW"
+                    getSelectedItemIndex="Rib_GetIndex" onAction="Rib_SetIndex"
+                    screentip="Flow style"
+                    supertip="Solid = colored by source node. Gradient = fades from source to target color. Gray = neutral flows.">
+            <item id="lk1" label="Solid (source)"/>
+            <item id="lk2" label="Gradient"/>
+            <item id="lk3" label="Gray"/>
+          </dropDown>
+          <checkBox id="chkVals" label="Show values on labels"
+                    getPressed="Rib_GetPressed" onAction="Rib_SetPressed"
+                    screentip="Show values"
+                    supertip="Adds each node's total next to its name."/>
+        </group>
+
+        <group id="grpColors" label="Custom colors">
+          <button id="btnNodeColor" label="Change node color" size="large" imageMso="ShapeFill"
+                  onAction="Rib_Button"
+                  screentip="Change the color of one node"
+                  supertip="Click the chart, then click a node (or its label) once more so it is selected on its own, then press this button and pick a color. The color is remembered for that node, also when the chart updates. Clicking a flow recolors the node it starts from."/>
+          <menu id="mnuPalette" label="Import palette" size="large" imageMso="ThemeColorsGallery"
+                screentip="Use your own palette"
+                supertip="Load brand colors from cells or from a file, then use them via Colors > Custom palette.">
+            <button id="btnPalCells" label="From selected cells..." onAction="Rib_Button"
+                    screentip="Palette from cells"
+                    supertip="Select cells filled with your colors, or cells containing hex codes (#E4002B) or RGB values (228,0,43). Up to 20 colors, read left-to-right, top-to-bottom. White is ignored."/>
+            <button id="btnPalFile" label="From a text / CSV / XML file..." onAction="Rib_Button"
+                    screentip="Palette from a file"
+                    supertip="Reads hex codes or RGB triples from .txt, .csv, .gpl or .css files, or an Office theme-colors .xml file."/>
+            <button id="btnPalReset" label="Clear custom palette" onAction="Rib_Button"
+                    screentip="Clear custom palette"
+                    supertip="Removes the imported palette and returns to the Corporate palette."/>
+          </menu>
+          <button id="btnResetNodes" label="Reset node colors" imageMso="Undo"
+                  onAction="Rib_Button"
+                  screentip="Reset node colors"
+                  supertip="Removes all per-node color changes so every node follows the selected palette again."/>
+        </group>
+
+        <group id="grpSize" label="Size and units">
+          <editBox id="edtW" label="Width:" sizeString="WWWW"
+                   getText="Rib_GetText" onChange="Rib_SetText"
+                   screentip="Chart width (points)"
+                   supertip="Total chart width in points. Default 960."/>
+          <editBox id="edtH" label="Height:" sizeString="WWWW"
+                   getText="Rib_GetText" onChange="Rib_SetText"
+                   screentip="Chart height (points)"
+                   supertip="Total chart height in points. Default 560."/>
+          <editBox id="edtUnit" label="Unit:" sizeString="WWWW"
+                   getText="Rib_GetText" onChange="Rib_SetText"
+                   screentip="Unit label"
+                   supertip="Text shown after values, e.g. USD, kg, GWh. Leave empty for none."/>
+        </group>
+
+        <group id="grpData" label="Data">
+          <checkBox id="chkAuto" label="Auto-update chart"
+                    getPressed="Rib_GetPressed" onAction="Rib_SetPressed"
+                    screentip="Auto-update"
+                    supertip="When on, the chart redraws automatically when a value or name in its source table changes, or when you add a row directly below the table. Note: each redraw clears Excel's Undo history."/>
+          <button id="btnSample" label="Sample data" size="large" imageMso="TableInsert"
+                  onAction="Rib_Button"
+                  screentip="Insert sample data"
+                  supertip="Adds a new sheet with an example budget table and its Sankey chart."/>
+        </group>
+
+        <group id="grpHelp" label="Help">
+          <button id="btnHelp" label="How to use" size="large" imageMso="Help"
+                  onAction="Rib_Button"
+                  screentip="How to use this add-in"
+                  supertip="Short guide: data layout, auto-update, design options and tips."/>
+          <button id="btnAbout" label="About" imageMso="Info"
+                  onAction="Rib_Button"
+                  screentip="About"
+                  supertip="Version information."/>
+        </group>
+
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
