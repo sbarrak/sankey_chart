@@ -51,7 +51,7 @@
         </group>
 
         <group id="grpColors" label="Custom colors">
-          <button id="btnNodeColor" label="Change node color" size="large" imageMso="ShapeFill"
+          <button id="btnNodeColor" label="Node color" size="large" imageMso="ShapeFill"
                   onAction="Rib_Button"
                   screentip="Change the color of one node"
                   supertip="Click the chart, then click a node (or its label) once more so it is selected on its own, then press this button and pick a color. The color is remembered for that node, also when the chart updates. Clicking a flow recolors the node it starts from."/>
@@ -68,7 +68,7 @@
                     screentip="Clear custom palette"
                     supertip="Removes the imported palette and returns to the Corporate palette."/>
           </menu>
-          <button id="btnResetNodes" label="Reset node colors" imageMso="Undo"
+          <button id="btnResetNodes" label="Reset colors" size="large" imageMso="Undo"
                   onAction="Rib_Button"
                   screentip="Reset node colors"
                   supertip="Removes all per-node color changes so every node follows the selected palette again."/>
@@ -90,18 +90,18 @@
         </group>
 
         <group id="grpData" label="Data">
+          <button id="btnSample" label="Sample data" imageMso="TableInsert"
+                  onAction="Rib_Button"
+                  screentip="Insert sample data"
+                  supertip="Adds a new sheet with an example budget table and its Sankey chart."/>
           <checkBox id="chkAuto" label="Auto-update chart"
                     getPressed="Rib_GetPressed" onAction="Rib_SetPressed"
                     screentip="Auto-update"
                     supertip="When on, the chart redraws automatically when a value or name in its source table changes, or when you add a row directly below the table. Note: each redraw clears Excel's Undo history."/>
-          <button id="btnSample" label="Sample data" size="large" imageMso="TableInsert"
-                  onAction="Rib_Button"
-                  screentip="Insert sample data"
-                  supertip="Adds a new sheet with an example budget table and its Sankey chart."/>
         </group>
 
         <group id="grpHelp" label="Help">
-          <button id="btnHelp" label="How to use" size="large" imageMso="Help"
+          <button id="btnHelp" label="How to use" imageMso="Help"
                   onAction="Rib_Button"
                   screentip="How to use this add-in"
                   supertip="Short guide: data layout, auto-update, design options and tips."/>
@@ -112,6 +112,20 @@
         </group>
 
       </tab>
+
+    <tab idMso="TabInsert">
+      <group id="grpInsSankey" label="Sankey">
+        <menu id="mnuInsSankey" label="Sankey" size="large" imageMso="ChartInsert"
+              screentip="Sankey chart"
+              supertip="Create or update a Sankey (flow) chart from a From / To / Value table. More options on the Sankey tab.">
+          <button id="btnInsCreate" label="Create / Update" imageMso="ChartInsert" onAction="Rib_Button"/>
+          <button id="btnInsSample" label="Sample data" imageMso="TableInsert" onAction="Rib_Button"/>
+          <button id="btnInsDelete" label="Delete chart" imageMso="Delete" onAction="Rib_Button"/>
+          <menuSeparator id="sepIns"/>
+          <button id="btnInsHelp" label="How to use" imageMso="Help" onAction="Rib_Button"/>
+        </menu>
+      </group>
+    </tab>
     </tabs>
   </ribbon>
 </customUI>

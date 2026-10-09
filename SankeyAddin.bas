@@ -1341,15 +1341,15 @@ End Sub
 
 Public Sub Rib_Button(control As IRibbonControl)
     Select Case control.ID
-        Case "btnCreate": CreateSankey
-        Case "btnDelete": DeleteSankeyActive
-        Case "btnSample": InsertSampleData
+        Case "btnCreate", "btnInsCreate": CreateSankey
+        Case "btnDelete", "btnInsDelete": DeleteSankeyActive
+        Case "btnSample", "btnInsSample": InsertSampleData
         Case "btnNodeColor": ChangeNodeColor
         Case "btnResetNodes": ResetNodeColors
         Case "btnPalCells": ImportPaletteFromCells
         Case "btnPalFile": ImportPaletteFromFile
         Case "btnPalReset": ResetPalette
-        Case "btnHelp": ShowHelp
+        Case "btnHelp", "btnInsHelp": ShowHelp
         Case "btnAbout": ShowAbout
     End Select
 End Sub

@@ -26,6 +26,10 @@ shapes, with a **Sankey ribbon tab** and **automatic updates** when your data ch
 No ribbon (skipped step 4)? A small floating "Sankey" toolbar appears on the Add-ins tab instead
 (Create / Title / Delete / Sample data / Help).
 
+## Where to find it
+- **Sankey** tab next to Home (all options), and a **Sankey** button at the end of the **Insert** tab (Create / Sample data / Delete / Help).
+- **Customize Ribbon / Quick Access Toolbar**: Excel cannot edit add-in tabs, but the commands can be added to your own tab: *Choose commands from > Macros* and pick `CreateSankey`, `InsertSampleData`, `DeleteSankeyActive`, `ChangeNodeColor`, `ResetNodeColors`, `ShowHelp`.
+
 ## Use
 1. Lay out three columns: **From | To | Value** (header optional).
 2. Select the table (or click one cell inside it) > **Sankey > Create / Update**.
