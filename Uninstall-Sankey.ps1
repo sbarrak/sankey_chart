@@ -12,17 +12,27 @@ param(
     [switch]$Yes
 )
 $ErrorActionPreference = 'Stop'
-$started = Get-Date
 $failed = $false
 $paths = New-Object System.Collections.Generic.List[string]
 $paths.Add($AddinPath)
 
+Add-Type -Namespace Sankey -Name Win -MemberDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint pid);'
+$script:xlPid = 0
+function New-Excel {                              # start a hidden Excel and remember ITS process id (never touches other Excel windows)
+    $app = New-Object -ComObject Excel.Application
+    $id = [uint32]0
+    try { [void][Sankey.Win]::GetWindowThreadProcessId([IntPtr]$app.Hwnd, [ref]$id) } catch {}
+    $script:xlPid = [int]$id
+    return $app
+}
 function Close-Excel($app) {                      # quit our hidden Excel for real, even if COM references linger
     try { if ($app) { $app.Quit() } } catch {}
     if ($app) { try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($app) } catch {} }
     [GC]::Collect(); [GC]::WaitForPendingFinalizers(); [GC]::Collect()
-    for ($i = 0; $i -lt 20 -and (Get-Process excel -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $started.AddSeconds(-2) }); $i++) { Start-Sleep -Milliseconds 500 }
-    Get-Process excel -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $started.AddSeconds(-2) } | Stop-Process -Force   # only instances this script started
+    if ($script:xlPid -gt 0) {
+        for ($i = 0; $i -lt 20 -and (Get-Process -Id $script:xlPid -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 500 }
+        Get-Process -Id $script:xlPid -ErrorAction SilentlyContinue | Stop-Process -Force   # only the instance this script started
+    }
 }
 
 $xl = $null
@@ -36,7 +46,7 @@ try {
 
     # 1. Unload through Excel itself (also finds copies installed in another folder)
     try {
-        $xl = New-Object -ComObject Excel.Application
+        $xl = New-Excel
         $xl.DisplayAlerts = $false
         [void]$xl.Workbooks.Add()                  # the AddIns collection needs an open workbook
         foreach ($ai in @($xl.AddIns)) {

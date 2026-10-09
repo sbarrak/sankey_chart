@@ -15,13 +15,23 @@ param(
 $ErrorActionPreference = 'Stop'
 $here = if ($env:SANKEY_DIR) { $env:SANKEY_DIR.TrimEnd('') } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $regKey = $null; $oldVal = $null; $xl = $null
-$started = Get-Date
+Add-Type -Namespace Sankey -Name Win -MemberDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint pid);'
+$script:xlPid = 0
+function New-Excel {                              # start a hidden Excel and remember ITS process id (never touches other Excel windows)
+    $app = New-Object -ComObject Excel.Application
+    $id = [uint32]0
+    try { [void][Sankey.Win]::GetWindowThreadProcessId([IntPtr]$app.Hwnd, [ref]$id) } catch {}
+    $script:xlPid = [int]$id
+    return $app
+}
 function Close-Excel($app) {                      # quit our hidden Excel for real, even if COM references linger
     try { if ($app) { $app.Quit() } } catch {}
     if ($app) { try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($app) } catch {} }
     [GC]::Collect(); [GC]::WaitForPendingFinalizers(); [GC]::Collect()
-    for ($i = 0; $i -lt 20 -and (Get-Process excel -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $started.AddSeconds(-2) }); $i++) { Start-Sleep -Milliseconds 500 }
-    Get-Process excel -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $started.AddSeconds(-2) } | Stop-Process -Force   # only instances this script started
+    if ($script:xlPid -gt 0) {
+        for ($i = 0; $i -lt 20 -and (Get-Process -Id $script:xlPid -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 500 }
+        Get-Process -Id $script:xlPid -ErrorAction SilentlyContinue | Stop-Process -Force   # only the instance this script started
+    }
 }
 try {
     foreach ($f in 'SankeyAddin.bas','SankeyEvents.cls','customUI14.xml','Install-Ribbon.ps1') {
@@ -29,7 +39,7 @@ try {
     }
     if (Get-Process excel -ErrorAction SilentlyContinue) { throw "Excel is running. Save your work, close all Excel windows and run this again." }
 
-    $xl = New-Object -ComObject Excel.Application
+    $xl = New-Excel
     $ver = $xl.Version                                   # e.g. 16.0
     Close-Excel $xl; $xl = $null
 
@@ -40,7 +50,7 @@ try {
 
     Write-Host "Building $AddinPath ..."
     New-Item -ItemType Directory -Force (Split-Path -Parent $AddinPath) | Out-Null
-    $xl = New-Object -ComObject Excel.Application
+    $xl = New-Excel
     $xl.DisplayAlerts = $false
     $wb = $xl.Workbooks.Add()
     $vb = $wb.VBProject
@@ -74,7 +84,7 @@ if (-not $failed) {
         $env:SANKEY_DIR = $here
         & ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $here 'Install-Ribbon.ps1')))) -AddinPath $AddinPath -Force   # run as text: not blocked by script-signing policy
         if (-not $NoRegister) {
-            $xl = New-Object -ComObject Excel.Application
+            $xl = New-Excel
             $xl.DisplayAlerts = $false
             [void]$xl.Workbooks.Add()                    # AddIns.Add needs an open workbook
             $ai = $xl.AddIns.Add($AddinPath, $false)
