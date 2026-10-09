@@ -10,11 +10,15 @@ shapes, with a **Sankey ribbon tab** and **automatic updates** when your data ch
 | `SankeyEvents.cls` | Auto-update event hook (import into VBA) |
 | `customUI14.xml` | Ribbon definition |
 | `Install-Sankey.cmd` / `.ps1` | One-step installer (build, ribbon, enable) |
+| `Uninstall-Sankey.cmd` / `.ps1` | Removes the add-in, its ribbon and its file |
+| `images/sankey.png` | Ribbon button icon |
 | `Install-Ribbon.ps1` | Adds the ribbon tab to the saved `.xlam` (manual install) |
 | `sample-data.csv` | Example data (or use *Sample data* on the ribbon) |
 
 ## Quick install (automatic)
 Close Excel, then double-click **`Install-Sankey.cmd`**. It builds `Sankey.xlam` from the code files, adds the ribbon and enables the add-in. Run it again to update. It briefly turns on Excel's *Trust access to the VBA project object model* and then restores your previous setting; if your IT policy locks that setting, use the manual steps below.
+
+**Uninstall:** close Excel and double-click **`Uninstall-Sankey.cmd`**. Charts already in your workbooks stay as ordinary shapes (they just stop auto-updating).
 
 ## Manual install (one time)
 1. Open Excel > **Alt+F11**. If you installed an older version, remove the old `SankeyAddin` module

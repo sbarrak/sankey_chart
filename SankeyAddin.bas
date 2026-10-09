@@ -599,11 +599,19 @@ Private Sub RedrawActive()
     If IsPlaceholder(ws) Then
         LoadConfig ws
         ws.Shapes(CHART_NAME).Width = cW: ws.Shapes(CHART_NAME).Height = cH
+        FocusChart ws
         Exit Sub
     End If
     Set src = StoredSource(ws)
     If src Is Nothing Then Exit Sub
-    BuildSankey ws, ExtendRange(src), True
+    If BuildSankey(ws, ExtendRange(src), True) Then FocusChart ws
+End Sub
+
+Private Sub FocusChart(ws As Worksheet)          ' keep the redrawn chart selected and the Sankey tab active
+    On Error Resume Next
+    If Not ws Is ActiveSheet Then Exit Sub
+    ws.Shapes(CHART_NAME).Select
+    If Not gRibbon Is Nothing Then gRibbon.ActivateTab "tabSankey"
 End Sub
 
 Private Sub CleanupDrawn(ws As Worksheet)

@@ -4,11 +4,11 @@
     <tabs>
       <tab idMso="TabAddIns">
         <group id="grpSankeyAI" label="Sankey">
-          <button id="btnCreate" showLabel="false" size="large" imageMso="ChartInsert"
+          <button id="btnCreate" label="Sankey" size="large" image="sankey"
                   onAction="Rib_Button"
                   screentip="Sankey chart"
                   supertip="Creates the Sankey chart. Select a table with three columns (From, To, Value), or one cell inside it, and click. If no valid data is selected an empty chart area is inserted instead: select the chart area to style it from the Sankey tab, then select your data and click again. Click again after changing the data range to rebuild the chart."/>
-          <button id="btnSample" showLabel="false" size="large" imageMso="TableInsert"
+          <button id="btnSample" label="Sample data" size="large" imageMso="TableInsert"
                   onAction="Rib_Button"
                   screentip="Sankey sample data"
                   supertip="Adds a new sheet with an example budget table and its Sankey chart."/>

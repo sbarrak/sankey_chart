@@ -25,8 +25,22 @@ try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $utf8 = New-Object Text.UTF8Encoding($false)
 
+    $png = Join-Path $base 'images\sankey.png'
+    if (-not (Test-Path $png)) { throw "images\sankey.png not found next to this script." }
+
     $zip = [IO.Compression.ZipFile]::Open($AddinPath, 'Update')
     try {
+        # button image (referenced from customUI14.xml as image="sankey")
+        foreach ($n in 'customUI/images/sankey.png','customUI/_rels/customUI14.xml.rels') { $o = $zip.GetEntry($n); if ($o) { $o.Delete() } }
+        $ie = $zip.CreateEntry('customUI/images/sankey.png'); $st = $ie.Open(); $bytes = [IO.File]::ReadAllBytes($png); $st.Write($bytes, 0, $bytes.Length); $st.Close()
+        $re = $zip.CreateEntry('customUI/_rels/customUI14.xml.rels'); $w = New-Object IO.StreamWriter($re.Open(), $utf8)
+        $w.Write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="sankey" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sankey.png"/></Relationships>'); $w.Close()
+        $ct = $zip.GetEntry('[Content_Types].xml')
+        $r = New-Object IO.StreamReader($ct.Open(), [Text.Encoding]::UTF8); $types = $r.ReadToEnd(); $r.Close()
+        if ($types -notmatch 'Extension="png"') {
+            $types = $types -replace '(<Types[^>]*>)', '$1<Default Extension="png" ContentType="image/png"/>'
+            $ct.Delete(); $ne = $zip.CreateEntry('[Content_Types].xml'); $w = New-Object IO.StreamWriter($ne.Open(), $utf8); $w.Write($types); $w.Close()
+        }
         $old = $zip.GetEntry('customUI/customUI14.xml'); if ($old) { $old.Delete() }
         $entry = $zip.CreateEntry('customUI/customUI14.xml')
         $w = New-Object IO.StreamWriter($entry.Open(), $utf8); $w.Write($xml); $w.Close()
