@@ -15,6 +15,14 @@ param(
 $ErrorActionPreference = 'Stop'
 $here = if ($env:SANKEY_DIR) { $env:SANKEY_DIR.TrimEnd('') } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $regKey = $null; $oldVal = $null; $xl = $null
+$started = Get-Date
+function Close-Excel($app) {                      # quit our hidden Excel for real, even if COM references linger
+    try { if ($app) { $app.Quit() } } catch {}
+    if ($app) { try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($app) } catch {} }
+    [GC]::Collect(); [GC]::WaitForPendingFinalizers(); [GC]::Collect()
+    for ($i = 0; $i -lt 20 -and (Get-Process excel -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $started.AddSeconds(-2) }); $i++) { Start-Sleep -Milliseconds 500 }
+    Get-Process excel -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $started.AddSeconds(-2) } | Stop-Process -Force   # only instances this script started
+}
 try {
     foreach ($f in 'SankeyAddin.bas','SankeyEvents.cls','customUI14.xml','Install-Ribbon.ps1') {
         if (-not (Test-Path (Join-Path $here $f))) { throw "Missing file next to this script: $f" }
@@ -23,7 +31,7 @@ try {
 
     $xl = New-Object -ComObject Excel.Application
     $ver = $xl.Version                                   # e.g. 16.0
-    $xl.Quit(); [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl); $xl = $null
+    Close-Excel $xl; $xl = $null
 
     $regKey = "HKCU:\Software\Microsoft\Office\$ver\Excel\Security"
     if (-not (Test-Path $regKey)) { New-Item $regKey -Force | Out-Null }
@@ -44,8 +52,8 @@ try {
         Remove-Item $AddinPath -Force
     }
     $wb.SaveAs($AddinPath, 55)                           # xlOpenXMLAddIn
-    $wb.Close($false)
-    $xl.Quit(); [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl); $xl = $null
+    $wb.Close($false); $wb = $null; $vb = $null
+    Close-Excel $xl; $xl = $null
 } catch {
     Write-Host "FAILED: $($_.Exception.Message)" -ForegroundColor Red
     if ($_.Exception.Message -match 'null-valued|0x800A03EC|programmatic access') {
@@ -53,7 +61,7 @@ try {
     }
     $failed = $true
 } finally {
-    if ($xl) { try { $xl.Quit() } catch {} }
+    if ($xl) { Close-Excel $xl; $xl = $null }
     if ($regKey) {                                       # restore the user's security setting
         if ($null -eq $oldVal) { Remove-ItemProperty $regKey -Name AccessVBOM -ErrorAction SilentlyContinue }
         else { Set-ItemProperty $regKey -Name AccessVBOM -Value $oldVal -Type DWord }
@@ -64,12 +72,14 @@ if (-not $failed) {
     try {
         $env:SANKEY_NOPAUSE = '1'
         $env:SANKEY_DIR = $here
-        & ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $here 'Install-Ribbon.ps1')))) -AddinPath $AddinPath   # run as text: not blocked by script-signing policy
+        & ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $here 'Install-Ribbon.ps1')))) -AddinPath $AddinPath -Force   # run as text: not blocked by script-signing policy
         if (-not $NoRegister) {
             $xl = New-Object -ComObject Excel.Application
+            $xl.DisplayAlerts = $false
+            [void]$xl.Workbooks.Add()                    # AddIns.Add needs an open workbook
             $ai = $xl.AddIns.Add($AddinPath, $false)
             $ai.Installed = $true
-            $xl.Quit(); [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl)
+            Close-Excel $xl; $xl = $null
         }
         Write-Host "Done. Start Excel: the Sankey icons are on the Add-ins tab." -ForegroundColor Green
     } catch {
