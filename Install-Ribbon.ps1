@@ -11,7 +11,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 try {
-    $xmlFile = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) 'customUI14.xml'
+    $base = if ($env:SANKEY_DIR) { $env:SANKEY_DIR } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+    $xmlFile = Join-Path $base 'customUI14.xml'
     if (-not (Test-Path $xmlFile))   { throw "customUI14.xml not found next to this script." }
     if (-not (Test-Path $AddinPath)) { throw "Add-in not found: $AddinPath`nSave it as Sankey.xlam first, or pass -AddinPath." }
     if (-not $Force -and (Get-Process excel -ErrorAction SilentlyContinue)) { throw "Excel is running. Close all Excel windows and run this again." }

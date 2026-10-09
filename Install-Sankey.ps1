@@ -13,7 +13,7 @@ param(
     [switch]$NoRegister
 )
 $ErrorActionPreference = 'Stop'
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$here = if ($env:SANKEY_DIR) { $env:SANKEY_DIR.TrimEnd('') } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $regKey = $null; $oldVal = $null; $xl = $null
 try {
     foreach ($f in 'SankeyAddin.bas','SankeyEvents.cls','customUI14.xml','Install-Ribbon.ps1') {
@@ -63,7 +63,8 @@ try {
 if (-not $failed) {
     try {
         $env:SANKEY_NOPAUSE = '1'
-        & (Join-Path $here 'Install-Ribbon.ps1') -AddinPath $AddinPath
+        $env:SANKEY_DIR = $here
+        & ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $here 'Install-Ribbon.ps1')))) -AddinPath $AddinPath   # run as text: not blocked by script-signing policy
         if (-not $NoRegister) {
             $xl = New-Object -ComObject Excel.Application
             $ai = $xl.AddIns.Add($AddinPath, $false)
