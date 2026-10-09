@@ -9,10 +9,14 @@ shapes, with a **Sankey ribbon tab** and **automatic updates** when your data ch
 | `SankeyAddin.bas` | Main code (import into VBA) |
 | `SankeyEvents.cls` | Auto-update event hook (import into VBA) |
 | `customUI14.xml` | Ribbon definition |
-| `Install-Ribbon.ps1` | Adds the ribbon tab to the saved `.xlam` |
+| `Install-Sankey.cmd` / `.ps1` | One-step installer (build, ribbon, enable) |
+| `Install-Ribbon.ps1` | Adds the ribbon tab to the saved `.xlam` (manual install) |
 | `sample-data.csv` | Example data (or use *Sample data* on the ribbon) |
 
-## Install (one time)
+## Quick install (automatic)
+Close Excel, then double-click **`Install-Sankey.cmd`**. It builds `Sankey.xlam` from the code files, adds the ribbon and enables the add-in. Run it again to update. It briefly turns on Excel's *Trust access to the VBA project object model* and then restores your previous setting; if your IT policy locks that setting, use the manual steps below.
+
+## Manual install (one time)
 1. Open Excel > **Alt+F11**. If you installed an older version, remove the old `SankeyAddin` module
    (right-click > Remove > *No* to export) and untick/delete the old add-in.
 2. **File > Import File...** and import **both** `SankeyAddin.bas` **and** `SankeyEvents.cls`.
