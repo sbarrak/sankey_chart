@@ -4,26 +4,34 @@ Creates professional Sankey (flow) diagrams from a **From | To | Value** table, 
 shapes, with a **Sankey ribbon tab** and **automatic updates** when your data changes.
 
 ## Files
-| File | Purpose |
+| Where | What |
 |---|---|
-| `SankeyAddin.bas` | Main code (import into VBA) |
-| `SankeyEvents.cls` | Auto-update event hook (import into VBA) |
-| `customUI14.xml` | Ribbon definition |
-| `Install-Sankey.cmd` / `.ps1` | One-step installer (build, ribbon, enable) |
-| `Install-Ribbon.ps1` | Adds the ribbon tab to the saved `.xlam` (manual install) |
-| `sample-data.csv` | Example data (or use *Sample data* on the ribbon) |
+| `Install-Sankey-Windows.cmd` / `Uninstall-Sankey-Windows.cmd` | One-step (un)installer for Excel on Windows |
+| `Install-Sankey-macOS.command` / `Uninstall-Sankey-macOS.command` | One-step (un)installer for Excel on macOS (Microsoft 365) |
+| `windows/` | Windows add-in: `SankeyAddin.bas`, `SankeyEvents.cls`, `customUI14.xml`, `images/`, PowerShell scripts used by the installers |
+| `mac/` | macOS add-in: the same code adapted for Mac (`SankeyAddin.bas`, `SkDict.cls`, `SankeyEvents.cls`, `customUI14.xml`), the prebuilt `Sankey.xlam`, and `Build-Mac-Addin.cmd` |
+| `sample-data.csv`, `sample-upload.xlsx` | Example data |
+| `SankeyChart.html`, `SankeyHtml/` | HTML version |
+| `SankeyFlow.pbiviz`, `sankeyFlow/` | Power BI visual |
 
 ## Quick install (automatic)
-Close Excel, then double-click **`Install-Sankey.cmd`**. It builds `Sankey.xlam` from the code files, adds the ribbon and enables the add-in. Run it again to update. It briefly turns on Excel's *Trust access to the VBA project object model* and then restores your previous setting; if your IT policy locks that setting, use the manual steps below.
+**Windows:** close Excel, then double-click **`Install-Sankey-Windows.cmd`**. It builds `Sankey.xlam` from the code files, adds the ribbon and enables the add-in; the Sankey buttons appear on the **Add-ins** tab. It briefly turns on Excel's *Trust access to the VBA project object model* and restores your previous setting; if your IT policy locks that setting, use the manual steps below. Remove with **`Uninstall-Sankey-Windows.cmd`**.
 
-## Manual install (one time)
+**macOS (Microsoft 365):** quit Excel, then double-click **`Install-Sankey-macOS.command`** (or run `bash Install-Sankey-macOS.command` in Terminal; if macOS blocks a downloaded file, right-click > Open). It copies `mac/Sankey.xlam` into Excel's Startup folder, and a **Sankey** tab appears next to Home. Choose *Enable Macros* if Excel asks. Remove with **`Uninstall-Sankey-macOS.command`**.
+The Mac version differs slightly: node colors are entered as hex codes (Excel for Mac has no color dialog for macros), and the buttons live on their own Sankey tab because Mac Excel has no Add-ins tab.
+
+**Updating `mac/Sankey.xlam`:** it is built on a Windows PC with Excel: close Excel, run `mac\Build-Mac-Addin.cmd`, and commit the new file.
+
+Charts already in your workbooks stay as ordinary shapes after uninstalling (they just stop auto-updating).
+
+## Manual install (Windows, one time)
 1. Open Excel > **Alt+F11**. If you installed an older version, remove the old `SankeyAddin` module
    (right-click > Remove > *No* to export) and untick/delete the old add-in.
-2. **File > Import File...** and import **both** `SankeyAddin.bas` **and** `SankeyEvents.cls`.
+2. **File > Import File...** and import **both** `windows/SankeyAddin.bas` **and** `windows/SankeyEvents.cls`.
 3. Close the VBA editor. **File > Save As > Excel Add-in (\*.xlam)**, name it `Sankey`
    (keep the default `AddIns` folder).
-4. **Close Excel completely**, then right-click `Install-Ribbon.ps1` > **Run with PowerShell**.
-   (If your add-in is elsewhere: `.\Install-Ribbon.ps1 -AddinPath "C:\path\Sankey.xlam"`.)
+4. **Close Excel completely**, then right-click `windows/Install-Ribbon.ps1` > **Run with PowerShell**.
+   (If your add-in is elsewhere: `.\windows\Install-Ribbon.ps1 -AddinPath "C:\path\Sankey.xlam"`.)
 5. Start Excel > **File > Options > Add-ins > Manage: Excel Add-ins > Go...** > tick **Sankey**.
    Two Sankey icons appear on the **Add-ins** tab (create chart, sample data); hover for help.
 
@@ -59,7 +67,7 @@ to point the chart at a different table.
 - Settings are stored inside each workbook (hidden names on the chart's sheet), never globally: a new file always starts from defaults and files don't affect each other.
 - One chart per sheet. Flows must go one way (A > B > C); circular flows are rejected.
 - The chart is a group of shapes (`Sankey_Chart`): you can move/resize it; ungrouping stops auto-update.
-- Windows Excel 2010+ only.
+- Windows Excel 2010+, or Excel for Mac (Microsoft 365).
 
 
 ---

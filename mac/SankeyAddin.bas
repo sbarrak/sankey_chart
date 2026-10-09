@@ -16,7 +16,7 @@ Private Const APP_VERSION As String = "2.0"
 Private Const CHART_NAME As String = "Sankey_Chart"
 Private Const PLACEHOLDER_TAG As String = "Sankey empty chart area"
 Private Const REG_APP As String = "SankeyAddin"
-Private Const FONT_NAME As String = "Segoe UI"
+Private Const FONT_NAME As String = "Arial"
 Private Const FONT_SIZE As Double = 10
 Private Const NODE_W As Double = 14
 Private Const NODE_GAP As Double = 12
@@ -178,7 +178,7 @@ End Sub
 Public Sub ShowHelp()
     MsgBox "HOW TO USE" & vbCrLf & vbCrLf & _
         "1. Put your data in three columns:  From | To | Value  (header row optional)." & vbCrLf & _
-        "2. Select the table (or click one cell inside it) and press Create / Update." & vbCrLf & _
+        "2. Select the table (or click one cell inside it) and click the Sankey button on the Sankey tab." & vbCrLf & _
         "3. The chart appears to the right of the data. Move, resize or recolor it freely." & vbCrLf & vbCrLf & _
         "AUTO-UPDATE" & vbCrLf & _
         "With Auto-update ticked, editing a value, a name, or adding a row directly below " & _
@@ -204,7 +204,7 @@ Public Sub ShowAbout()
     MsgBox APP_NAME & "  v" & APP_VERSION & vbCrLf & vbCrLf & _
         "Creates Sankey flow diagrams from a From / To / Value table, " & _
         "using native Excel shapes, with automatic updates when the data changes." & vbCrLf & vbCrLf & _
-        "Windows Excel 2010 or later.", vbInformation, "About " & APP_NAME
+        "Excel for Mac (Microsoft 365).", vbInformation, "About " & APP_NAME
 End Sub
 
 '==============================================================================
@@ -287,7 +287,7 @@ Public Sub AutoRefresh(ByVal Sh As Object, ByVal Target As Range)
         If Intersect(Target, area) Is Nothing Then Exit Sub
     End If
     Set src = ExtendRange(src)
-    If sigCache Is Nothing Then Set sigCache = CreateObject("Scripting.Dictionary")
+    If sigCache Is Nothing Then Set sigCache = New SkDict
     sig = Signature(src)
     If sigCache.Exists(SigKey(ws)) Then
         If sigCache(SigKey(ws)) = sig Then Exit Sub        ' nothing relevant changed
@@ -372,7 +372,7 @@ End Function
 
 Private Sub CfgWrite(ws As Worksheet, key As String, val As String)
     If ws Is Nothing Then Exit Sub
-    If pend Is Nothing Then Set pend = CreateObject("Scripting.Dictionary")
+    If pend Is Nothing Then Set pend = New SkDict
     If HasChart(ws) Then
         SetNameStr ws, "Sankey_" & key, val
     Else
@@ -574,7 +574,7 @@ Private Function BuildSankeyCore(ws As Worksheet, rng As Range, silent As Boolea
     Next s
     DeleteChartShape ws
     Draw ws, ox, oy
-    If sigCache Is Nothing Then Set sigCache = CreateObject("Scripting.Dictionary")
+    If sigCache Is Nothing Then Set sigCache = New SkDict
     sigCache(SigKey(ws)) = Signature(rng)                     ' before PersistConfig: names can fire events
     PersistConfig ws, rng
 
@@ -599,11 +599,19 @@ Private Sub RedrawActive()
     If IsPlaceholder(ws) Then
         LoadConfig ws
         ws.Shapes(CHART_NAME).Width = cW: ws.Shapes(CHART_NAME).Height = cH
+        FocusChart ws
         Exit Sub
     End If
     Set src = StoredSource(ws)
     If src Is Nothing Then Exit Sub
-    BuildSankey ws, ExtendRange(src), True
+    If BuildSankey(ws, ExtendRange(src), True) Then FocusChart ws
+End Sub
+
+Private Sub FocusChart(ws As Worksheet)          ' keep the redrawn chart selected and the Sankey tab active
+    On Error Resume Next
+    If Not ws Is ActiveSheet Then Exit Sub
+    ws.Shapes(CHART_NAME).Select
+    If Not gRibbon Is Nothing Then gRibbon.ActivateTab "tabSankey"
 End Sub
 
 Private Sub CleanupDrawn(ws As Worksheet)
@@ -631,7 +639,7 @@ Private Sub LoadData(rng As Range)
     If first > rows Then Exit Sub
 
     ReDim nName(1 To 2 * rows): ReDim lSrc(1 To rows): ReDim lDst(1 To rows): ReDim lVal(1 To rows)
-    Set d = CreateObject("Scripting.Dictionary")
+    Set d = New SkDict
     d.CompareMode = 1                                               ' "a" and "A" are the same node
     For r = first To rows
         If IsError(v(r, 1)) Or IsError(v(r, 2)) Or IsError(v(r, 3)) Then GoTo NextRow
@@ -1142,7 +1150,7 @@ End Function
 Private Function LoadNodeColors(ws As Worksheet) As Object
     Dim d As Object, s As String, k As Long, part As String
     Dim items() As String, i As Long, p As Long
-    Set d = CreateObject("Scripting.Dictionary")
+    Set d = New SkDict
     d.CompareMode = 1
     Do
         k = k + 1
@@ -1207,21 +1215,26 @@ Private Function NodeFillNow(ws As Worksheet, ByVal nm As String) As Long
 End Function
 
 Private Function PickColor(ByVal cur As Long, ByRef result As Long) As Boolean
-    ' Uses Excel's own Colors dialog (standard + custom tabs) via a temporary palette slot.
-    Dim wb As Workbook, old As Long, ok As Boolean
-    On Error GoTo Fail
-    Set wb = ActiveWorkbook
-    old = wb.Colors(10)
-    ok = Application.Dialogs(xlDialogEditColor).Show(10, cur And 255, (cur \ 256) And 255, (cur \ 65536) And 255)
-    If ok Then
-        result = wb.Colors(10)
-        PickColor = True
+    ' Excel for Mac has no color dialog for macros: ask for a hex code instead.
+    Dim s As String
+    s = InputBox("Enter the color as a hex code, e.g. #E4002B", APP_NAME, "#" & RgbToHex(cur))
+    s = Trim$(Replace(s, "#", ""))
+    If Len(s) = 0 Then Exit Function
+    If Not IsHex6(s) Then
+        MsgBox "That is not a valid hex color. Use 6 characters 0-9 / A-F, e.g. E4002B.", vbExclamation, APP_NAME
+        Exit Function
     End If
-    wb.Colors(10) = old
-    Exit Function
-Fail:
-    On Error Resume Next
-    wb.Colors(10) = old
+    result = HexToRgb(s)
+    PickColor = True
+End Function
+
+Private Function IsHex6(ByVal s As String) As Boolean
+    Dim i As Long
+    If Len(s) <> 6 Then Exit Function
+    For i = 1 To 6
+        If InStr("0123456789abcdefABCDEF", Mid$(s, i, 1)) = 0 Then Exit Function
+    Next i
+    IsHex6 = True
 End Function
 
 Public Sub ChangeNodeColor()
@@ -1327,34 +1340,95 @@ Private Function ReadTextFile(ByVal path As String) As String
     ReadTextFile = Replace(s, vbNullChar, "")                ' also copes with UTF-16 files
 End Function
 
+Private Function IsAlnum(ByVal c As String) As Boolean
+    IsAlnum = (c Like "[0-9A-Za-z_]")
+End Function
+
 Private Function ExtractHexColors(ByVal txt As String, ByRef n As Long) As String
-    Dim re As Object, m As Object, list As String, ln As Variant
-    Set re = CreateObject("VBScript.RegExp")
-    re.Global = True
-    If InStr(1, txt, "srgbClr", vbTextCompare) > 0 Then      ' Office theme-colors XML
-        re.Pattern = "srgbClr\s+val\s*=\s*""([0-9A-Fa-f]{6})"""
-    Else
-        re.Pattern = "#?\b([0-9A-Fa-f]{6})\b"
-    End If
-    For Each m In re.Execute(txt)
-        AddHex list, n, CStr(m.SubMatches(0))
-    Next m
-    If n = 0 Then                                            ' GIMP .gpl or "R,G,B" lists
-        re.Pattern = "(\d{1,3})[ \t,;]+(\d{1,3})[ \t,;]+(\d{1,3})"
-        For Each m In re.Execute(txt)
-            If CLng(m.SubMatches(0)) <= 255 And CLng(m.SubMatches(1)) <= 255 And CLng(m.SubMatches(2)) <= 255 Then
-                AddHex list, n, RgbToHex(RGB(CLng(m.SubMatches(0)), CLng(m.SubMatches(1)), CLng(m.SubMatches(2))))
+    Dim list As String, i As Long, j As Long, L As Long, tok As String, p As Long, q As Long
+    L = Len(txt)
+    If InStr(1, txt, "srgbClr", vbTextCompare) > 0 Then          ' Office theme-colors XML: srgbClr val="RRGGBB"
+        p = 1
+        Do
+            p = InStr(p, txt, "srgbClr", vbTextCompare)
+            If p = 0 Then Exit Do
+            q = InStr(p, txt, "val=""", vbTextCompare)
+            If q = 0 Then Exit Do
+            tok = Mid$(txt, q + 5, 6)
+            If IsHex6(tok) Then AddHex list, n, tok
+            p = q + 5
+        Loop
+    Else                                                         ' hex codes: 6 hex characters standing alone
+        i = 1
+        Do While i <= L
+            If IsAlnum(Mid$(txt, i, 1)) Then
+                j = i
+                Do While j <= L
+                    If Not IsAlnum(Mid$(txt, j, 1)) Then Exit Do
+                    j = j + 1
+                Loop
+                tok = Mid$(txt, i, j - i)
+                If Len(tok) = 6 Then
+                    If IsHex6(tok) Then AddHex list, n, tok
+                End If
+                i = j
+            Else
+                i = i + 1
             End If
-        Next m
+        Loop
     End If
+    If n = 0 Then ParseRgbTriples txt, list, n                   ' GIMP .gpl or "R,G,B" lists
     ExtractHexColors = list
 End Function
+
+Private Function IsSep(ByVal c As String) As Boolean
+    IsSep = (c = " " Or c = vbTab Or c = "," Or c = ";")
+End Function
+
+Private Sub ParseRgbTriples(ByVal txt As String, ByRef list As String, ByRef n As Long)
+    Dim i As Long, L As Long, k As Long, v(1 To 3) As Long, ok As Boolean, c As String, num As String
+    L = Len(txt): i = 1
+    Do While i <= L
+        If Mid$(txt, i, 1) Like "[0-9]" Then
+            ok = True: k = 0
+            Do While ok And k < 3
+                num = ""
+                Do While i <= L
+                    c = Mid$(txt, i, 1)
+                    If Not (c Like "[0-9]") Then Exit Do
+                    num = num & c: i = i + 1
+                Loop
+                If Len(num) = 0 Or Len(num) > 3 Then
+                    ok = False
+                Else
+                    k = k + 1: v(k) = CLng(num)
+                    If k < 3 Then
+                        If i > L Then
+                            ok = False
+                        ElseIf Not IsSep(Mid$(txt, i, 1)) Then
+                            ok = False
+                        Else
+                            Do While i <= L
+                                If Not IsSep(Mid$(txt, i, 1)) Then Exit Do
+                                i = i + 1
+                            Loop
+                        End If
+                    End If
+                End If
+            Loop
+            If ok And k = 3 Then
+                If v(1) <= 255 And v(2) <= 255 And v(3) <= 255 Then AddHex list, n, RgbToHex(RGB(v(1), v(2), v(3)))
+            End If
+        Else
+            i = i + 1
+        End If
+    Loop
+End Sub
 
 Public Sub ImportPaletteFromFile()
     Dim f As Variant, hexes As String, n As Long
     On Error GoTo EH
-    f = Application.GetOpenFilename("Palette files (*.txt;*.csv;*.xml;*.gpl;*.css),*.txt;*.csv;*.xml;*.gpl;*.css," & _
-                                    "All files (*.*),*.*", , "Import color palette")
+    f = Application.GetOpenFilename(, , "Import color palette")      ' no filter: Mac uses a different filter syntax
     If VarType(f) = vbBoolean Then Exit Sub
     hexes = ExtractHexColors(ReadTextFile(CStr(f)), n)
     If n = 0 Then
@@ -1467,16 +1541,7 @@ Public Sub CheckRibbon()
 End Sub
 
 Private Sub BuildToolbar()
-    Dim cb As Object
-    On Error Resume Next
-    Application.CommandBars("Sankey").Delete
-    On Error GoTo 0
-    Set cb = Application.CommandBars.Add(Name:="Sankey", Position:=msoBarFloating, Temporary:=True)
-    AddToolbarButton cb, "Create / Update", "CreateSankey"
-    AddToolbarButton cb, "Title...", "QuickTitle"
-    AddToolbarButton cb, "Sample data", "InsertSampleData"
-    AddToolbarButton cb, "Help", "ShowHelp"
-    cb.Visible = True
+    ' Excel for Mac has no floating toolbars; the Sankey ribbon tab is the only UI
 End Sub
 
 Private Sub AddToolbarButton(cb As Object, cap As String, macro As String)
