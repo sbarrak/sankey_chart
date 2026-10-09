@@ -13,7 +13,7 @@ param(
     [switch]$NoRegister
 )
 $ErrorActionPreference = 'Stop'
-$here = if ($env:SANKEY_DIR) { $env:SANKEY_DIR.TrimEnd('') } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+$here = if ($env:SANKEY_DIR) { $env:SANKEY_DIR.TrimEnd([char]92) } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $regKey = $null; $oldVal = $null; $xl = $null
 Add-Type -Namespace Sankey -Name Win -MemberDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint pid);'
 $script:xlPid = 0
@@ -34,9 +34,12 @@ function Close-Excel($app) {                      # quit our hidden Excel for re
     }
 }
 try {
-    foreach ($f in 'SankeyAddin.bas','SankeyEvents.cls','customUI14.xml','Install-Ribbon.ps1') {
-        if (-not (Test-Path (Join-Path $here $f))) { throw "Missing file next to this script: $f" }
+    foreach ($f in 'SankeyAddin.bas','SankeyEvents.cls','customUI14.xml') {
+        if (-not (Test-Path (Join-Path $here $f))) { throw "Missing file in $here : $f" }
     }
+    $tools = if ($env:SANKEY_TOOLS) { $env:SANKEY_TOOLS.TrimEnd([char]92) } else { $here }
+    $ribbonScript = Join-Path $tools 'Install-Ribbon.ps1'
+    if (-not (Test-Path $ribbonScript)) { throw "Missing file: $ribbonScript" }
     if (Get-Process excel -ErrorAction SilentlyContinue) { throw "Excel is running. Save your work, close all Excel windows and run this again." }
 
     $xl = New-Excel
@@ -54,8 +57,9 @@ try {
     $xl.DisplayAlerts = $false
     $wb = $xl.Workbooks.Add()
     $vb = $wb.VBProject
-    [void]$vb.VBComponents.Import((Join-Path $here 'SankeyAddin.bas'))
-    [void]$vb.VBComponents.Import((Join-Path $here 'SankeyEvents.cls'))
+    foreach ($m in Get-ChildItem $here -File | Where-Object { $_.Extension -in '.bas','.cls' } | Sort-Object Name) {
+        [void]$vb.VBComponents.Import($m.FullName)         # every code module in the folder (Windows: 2, macOS build: 3)
+    }
     $wb.Title = 'Sankey Chart Builder'
     if (Test-Path $AddinPath) {
         foreach ($a in $xl.AddIns) { if ($a.FullName -eq $AddinPath) { $a.Installed = $false } }
@@ -82,7 +86,7 @@ if (-not $failed) {
     try {
         $env:SANKEY_NOPAUSE = '1'
         $env:SANKEY_DIR = $here
-        & ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $here 'Install-Ribbon.ps1')))) -AddinPath $AddinPath -Force   # run as text: not blocked by script-signing policy
+        & ([scriptblock]::Create([IO.File]::ReadAllText($ribbonScript))) -AddinPath $AddinPath -Force   # run as text: not blocked by script-signing policy
         if (-not $NoRegister) {
             $xl = New-Excel
             $xl.DisplayAlerts = $false
