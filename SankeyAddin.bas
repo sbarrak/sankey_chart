@@ -14,6 +14,7 @@ Option Explicit
 Private Const APP_NAME As String = "Sankey Chart Builder"
 Private Const APP_VERSION As String = "2.0"
 Private Const CHART_NAME As String = "Sankey_Chart"
+Private Const PLACEHOLDER_TAG As String = "Sankey empty chart area"
 Private Const REG_APP As String = "SankeyAddin"
 Private Const FONT_NAME As String = "Segoe UI"
 Private Const FONT_SIZE As Double = 10
@@ -62,14 +63,55 @@ Public Sub CreateSankey()
         Exit Sub
     End If
     Set ws = ActiveSheet
-    Set rng = ResolveSource(ws)
-    If rng Is Nothing Then Exit Sub
-    BuildSankey ws, rng, False
+    Set rng = ResolveSource(ws, True)
+    If Not rng Is Nothing Then
+        If BuildSankey(ws, rng, True) Then
+            RibbonRefresh
+            Exit Sub
+        End If
+    End If
+    ' no usable data: leave an empty chart area to style (or keep the chart that is already there)
+    If HasChart(ws) And Not IsPlaceholder(ws) Then
+        MsgBox "Select a range with three columns (From, To, Value) with positive numeric values, then click again.", vbExclamation, APP_NAME
+        Exit Sub
+    End If
+    ShowPlaceholder ws
     RibbonRefresh
     Exit Sub
 EH:
     Application.ScreenUpdating = True
     MsgBox "Sankey failed (error " & Err.Number & "): " & Err.Description, vbExclamation, APP_NAME
+End Sub
+
+Private Function IsPlaceholder(ws As Worksheet) As Boolean
+    On Error Resume Next
+    IsPlaceholder = (ws.Shapes(CHART_NAME).AlternativeText = PLACEHOLDER_TAG)
+End Function
+
+Private Sub ShowPlaceholder(ws As Worksheet)
+    Dim s As Shape, x As Double, y As Double
+    If IsPlaceholder(ws) Then
+        ws.Shapes(CHART_NAME).Select
+        Exit Sub
+    End If
+    LoadConfig ws
+    x = ActiveWindow.VisibleRange.Left: y = ActiveWindow.VisibleRange.Top
+    If TypeName(Selection) = "Range" Then x = Selection.Left: y = Selection.Top
+    Set s = ws.Shapes.AddShape(msoShapeRectangle, x, y, cW, cH)
+    s.Name = CHART_NAME
+    s.AlternativeText = PLACEHOLDER_TAG
+    s.Fill.ForeColor.RGB = RGB(248, 249, 251)
+    s.Line.ForeColor.RGB = RGB(150, 160, 175)
+    s.Line.DashStyle = msoLineDash
+    s.Line.Weight = 1.25
+    With s.TextFrame2
+        .TextRange.Text = "Sankey chart area" & vbLf & "Select your table (From | To | Value) and click the Sankey icon again."
+        .TextRange.Font.Size = 14
+        .TextRange.Font.Fill.ForeColor.RGB = RGB(90, 100, 115)
+        .TextRange.ParagraphFormat.Alignment = msoAlignCenter
+        .VerticalAnchor = msoAnchorMiddle
+    End With
+    s.Select
 End Sub
 
 Public Sub DeleteSankey(Optional ws As Worksheet)
@@ -455,7 +497,7 @@ End Function
 '==============================================================================
 '  SOURCE RANGE
 '==============================================================================
-Private Function ResolveSource(ws As Worksheet) As Range
+Private Function ResolveSource(ws As Worksheet, Optional silent As Boolean) As Range
     Dim sel As Range, stored As Range, r As Range
     Set stored = StoredSource(ws)
     If TypeName(Selection) = "Range" Then
@@ -470,20 +512,20 @@ Private Function ResolveSource(ws As Worksheet) As Range
     ElseIf Not stored Is Nothing And HasChart(ws) Then
         Set r = ExtendRange(stored)                           ' chart selected -> refresh it
     Else
-        MsgBox "Select a range with three columns: From, To, Value.", vbExclamation, APP_NAME
+        If Not silent Then MsgBox "Select a range with three columns: From, To, Value.", vbExclamation, APP_NAME
         Exit Function
     End If
-    Set ResolveSource = NormalizeSource(ws, r)
+    Set ResolveSource = NormalizeSource(ws, r, silent)
 End Function
 
-Private Function NormalizeSource(ws As Worksheet, r As Range) As Range
+Private Function NormalizeSource(ws As Worksheet, r As Range, Optional silent As Boolean) As Range
     Set r = Intersect(r, ws.UsedRange)                        ' trims whole-column selections
     If r Is Nothing Then
-        MsgBox "The selection is empty.", vbExclamation, APP_NAME
+        If Not silent Then MsgBox "The selection is empty.", vbExclamation, APP_NAME
         Exit Function
     End If
     If r.Columns.Count < 3 Then
-        MsgBox "Select a range with three columns: From, To, Value.", vbExclamation, APP_NAME
+        If Not silent Then MsgBox "Select a range with three columns: From, To, Value.", vbExclamation, APP_NAME
         Exit Function
     End If
     If r.Columns.Count > 3 Then Set r = r.Resize(, 3)         ' first three columns
@@ -554,6 +596,11 @@ Private Sub RedrawActive()
     Set ws = CurSheet()
     If ws Is Nothing Then Exit Sub
     If Not HasChart(ws) Then Exit Sub
+    If IsPlaceholder(ws) Then
+        LoadConfig ws
+        ws.Shapes(CHART_NAME).Width = cW: ws.Shapes(CHART_NAME).Height = cH
+        Exit Sub
+    End If
     Set src = StoredSource(ws)
     If src Is Nothing Then Exit Sub
     BuildSankey ws, ExtendRange(src), True
@@ -1342,7 +1389,6 @@ End Sub
 Public Sub Rib_Button(control As IRibbonControl)
     Select Case control.ID
         Case "btnCreate": CreateSankey
-        Case "btnDelete": DeleteSankeyActive
         Case "btnSample": InsertSampleData
         Case "btnNodeColor": ChangeNodeColor
         Case "btnResetNodes": ResetNodeColors
@@ -1428,7 +1474,6 @@ Private Sub BuildToolbar()
     Set cb = Application.CommandBars.Add(Name:="Sankey", Position:=msoBarFloating, Temporary:=True)
     AddToolbarButton cb, "Create / Update", "CreateSankey"
     AddToolbarButton cb, "Title...", "QuickTitle"
-    AddToolbarButton cb, "Delete", "DeleteSankeyActive"
     AddToolbarButton cb, "Sample data", "InsertSampleData"
     AddToolbarButton cb, "Help", "ShowHelp"
     cb.Visible = True

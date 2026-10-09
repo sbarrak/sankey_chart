@@ -21,17 +21,17 @@ shapes, with a **Sankey ribbon tab** and **automatic updates** when your data ch
 4. **Close Excel completely**, then right-click `Install-Ribbon.ps1` > **Run with PowerShell**.
    (If your add-in is elsewhere: `.\Install-Ribbon.ps1 -AddinPath "C:\path\Sankey.xlam"`.)
 5. Start Excel > **File > Options > Add-ins > Manage: Excel Add-ins > Go...** > tick **Sankey**.
-   A **Sankey** tab appears next to Home.
+   Two Sankey icons appear on the **Add-ins** tab (create chart, sample data); hover for help.
 
 No ribbon (skipped step 4)? A small floating "Sankey" toolbar appears on the Add-ins tab instead
-(Create / Title / Delete / Sample data / Help).
+(Create / Title / Sample data / Help).
 
 ## Use
 1. Lay out three columns: **From | To | Value** (header optional).
-2. Select the table (or click one cell inside it) > **Sankey > Create / Update**.
-3. Style it from the ribbon: title, subtitle, colors, flow style, values, size, unit.
-   Changes restyle the chart on the active sheet immediately.
-4. Try **Sample data** for a ready-made example.
+2. Select the table (or click one cell inside it) > **Add-ins > Sankey icon**. With no valid data selected you get an empty chart area instead.
+3. Click the chart (or the empty area): a contextual **Sankey** tab appears next to the Shape Format tab (Drawing Tools). Style it there: title, subtitle, colors, flow style, values, size, unit. Changes restyle the chart immediately.
+4. To fill an empty chart area, select your data and click the Sankey icon again. The second icon inserts **Sample data**.
+5. To remove a chart, select it and press Delete.
 
 ## Colors
 - **Colors** dropdown: 5 built-in palettes, **Workbook theme** (the colors applied under Page Layout > Colors, e.g. a company theme) and **Custom palette**.

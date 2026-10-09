@@ -2,18 +2,22 @@
 <customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Rib_OnLoad">
   <ribbon>
     <tabs>
-      <tab id="tabSankey" label="Sankey" insertAfterMso="TabHome">
-
-        <group id="grpChart" label="Chart">
-          <button id="btnCreate" label="Create / Update" size="large" imageMso="ChartInsert"
+      <tab idMso="TabAddIns">
+        <group id="grpSankeyAI" label="Sankey">
+          <button id="btnCreate" showLabel="false" size="large" imageMso="ChartInsert"
                   onAction="Rib_Button"
-                  screentip="Create or update the Sankey chart"
-                  supertip="Select a table with three columns (From, To, Value) - or click one cell inside it - and press this button. If a chart already exists on the sheet it is rebuilt from its source table."/>
-          <button id="btnDelete" label="Delete" size="large" imageMso="Delete"
+                  screentip="Sankey chart"
+                  supertip="Creates the Sankey chart. Select a table with three columns (From, To, Value), or one cell inside it, and click. If no valid data is selected an empty chart area is inserted instead: select the chart area to style it from the Sankey tab, then select your data and click again. Click again after changing the data range to rebuild the chart."/>
+          <button id="btnSample" showLabel="false" size="large" imageMso="TableInsert"
                   onAction="Rib_Button"
-                  screentip="Delete the chart"
-                  supertip="Removes the Sankey chart from the active sheet and stops auto-updating it. Your data is not touched."/>
+                  screentip="Sankey sample data"
+                  supertip="Adds a new sheet with an example budget table and its Sankey chart."/>
         </group>
+      </tab>
+    </tabs>
+    <contextualTabs>
+      <tabSet idMso="TabSetDrawingTools">
+      <tab id="tabSankey" label="Sankey">
 
         <group id="grpDesign" label="Design">
           <editBox id="edtTitle" label="Title:" sizeString="WWWWWWWWWWWWWWWW"
@@ -94,10 +98,6 @@
                     getPressed="Rib_GetPressed" onAction="Rib_SetPressed"
                     screentip="Auto-update"
                     supertip="When on, the chart redraws automatically when a value or name in its source table changes, or when you add a row directly below the table. Note: each redraw clears Excel's Undo history."/>
-          <button id="btnSample" label="Sample data" size="large" imageMso="TableInsert"
-                  onAction="Rib_Button"
-                  screentip="Insert sample data"
-                  supertip="Adds a new sheet with an example budget table and its Sankey chart."/>
         </group>
 
         <group id="grpHelp" label="Help">
@@ -112,6 +112,7 @@
         </group>
 
       </tab>
-    </tabs>
+      </tabSet>
+    </contextualTabs>
   </ribbon>
 </customUI>
