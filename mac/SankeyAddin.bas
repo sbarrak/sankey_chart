@@ -28,6 +28,7 @@ Private sigCache As Object
 Private gBusy As Boolean
 Private gErrNum As Long, gErrDesc As String
 Private gPolling As Boolean, gPollNext As Date
+Private gChartSel As Boolean                    ' Sankey chart selected = Sankey tab visible
 Private lastGW As Double, lastGH As Double      ' actual size of the group as drawn
 Private pend As Object                          ' settings chosen before a chart exists (per sheet, memory only)
 Private gPurged As Boolean
@@ -178,8 +179,9 @@ End Sub
 Public Sub ShowHelp()
     MsgBox "HOW TO USE" & vbCrLf & vbCrLf & _
         "1. Put your data in three columns:  From | To | Value  (header row optional)." & vbCrLf & _
-        "2. Select the table (or click one cell inside it) and click the Sankey button on the Sankey tab." & vbCrLf & _
-        "3. The chart appears to the right of the data. Move, resize or recolor it freely." & vbCrLf & vbCrLf & _
+        "2. Select the table (or click one cell inside it) and click the Sankey icon on the Add-ins tab." & vbCrLf & _
+        "3. The chart appears to the right of the data. Move, resize or recolor it freely." & vbCrLf & _
+        "4. Click the chart: the Sankey tab appears with the design options." & vbCrLf & vbCrLf & _
         "AUTO-UPDATE" & vbCrLf & _
         "With Auto-update ticked, editing a value, a name, or adding a row directly below " & _
         "the table redraws the chart. Note: each redraw clears Excel's Undo history." & vbCrLf & vbCrLf & _
@@ -239,8 +241,37 @@ End Sub
 
 Public Sub PollResize()
     If Not gPolling Then Exit Sub
+    CheckSelection
     CheckResize
     SchedulePoll
+End Sub
+
+'--- Mac stand-in for a contextual tab: show the Sankey tab only while the chart is selected ----
+Private Sub CheckSelection()
+    Dim sel As Boolean
+    sel = SankeySelected()
+    If sel = gChartSel Then Exit Sub
+    gChartSel = sel
+    On Error Resume Next
+    If gRibbon Is Nothing Then Exit Sub
+    gRibbon.Invalidate                                             ' re-reads visibility and the control values
+    If sel Then gRibbon.ActivateTab "tabSankey"
+End Sub
+
+Private Function SankeySelected() As Boolean
+    Dim shp As Object
+    On Error GoTo Done
+    If Workbooks.Count = 0 Then Exit Function
+    If TypeName(ActiveSheet) <> "Worksheet" Then Exit Function
+    If TypeName(Selection) = "Range" Then Exit Function
+    Set shp = Selection.ShapeRange(1)
+    If shp.Name = CHART_NAME Then SankeySelected = True: Exit Function
+    If shp.ParentGroup.Name = CHART_NAME Then SankeySelected = True   ' a node or flow inside the chart
+Done:
+End Function
+
+Public Sub Rib_GetVisible(control As IRibbonControl, ByRef visible)
+    visible = gChartSel
 End Sub
 
 Private Sub CheckResize()
@@ -611,7 +642,9 @@ Private Sub FocusChart(ws As Worksheet)          ' keep the redrawn chart select
     On Error Resume Next
     If Not ws Is ActiveSheet Then Exit Sub
     ws.Shapes(CHART_NAME).Select
-    If Not gRibbon Is Nothing Then gRibbon.ActivateTab "tabSankey"
+    If gRibbon Is Nothing Then Exit Sub
+    If Not gChartSel Then gChartSel = True: gRibbon.Invalidate
+    gRibbon.ActivateTab "tabSankey"
 End Sub
 
 Private Sub CleanupDrawn(ws As Worksheet)

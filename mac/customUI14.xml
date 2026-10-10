@@ -2,18 +2,21 @@
 <customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Rib_OnLoad">
   <ribbon>
     <tabs>
-      <tab id="tabSankey" label="Sankey" insertAfterMso="TabHome">
+      <tab id="tabSankeyAI" label="Add-ins">
         <group id="grpSankeyAI" label="Sankey">
           <button id="btnCreate" label="Sankey" size="large" image="sankey"
                   onAction="Rib_Button"
                   screentip="Sankey chart"
-                  supertip="Creates the Sankey chart. Select a table with three columns (From, To, Value), or one cell inside it, and click. If no valid data is selected an empty chart area is inserted instead. Click again after changing the data range to rebuild the chart."/>
+                  supertip="Creates the Sankey chart. Select a table with three columns (From, To, Value), or one cell inside it, and click. If no valid data is selected an empty chart area is inserted instead: select the chart area to style it from the Sankey tab, then select your data and click again. Click again after changing the data range to rebuild the chart."/>
           <button id="btnSample" label="Sample data" size="large" imageMso="TableInsert"
                   onAction="Rib_Button"
                   screentip="Sankey sample data"
                   supertip="Adds a new sheet with an example budget table and its Sankey chart."/>
         </group>
-
+      </tab>
+      <!-- The Drawing Tools contextual tab set used on Windows is not dependable in Excel for Mac, so this tab is shown only while
+           the Sankey chart is selected (Rib_GetVisible, checked by the 1-second watcher). -->
+      <tab id="tabSankey" label="Sankey" getVisible="Rib_GetVisible">
 
         <group id="grpDesign" label="Design">
           <editBox id="edtTitle" label="Title:" sizeString="WWWWWWWWWWWWWWWW"
