@@ -1,5 +1,8 @@
 # Sankey Chart Builder for Excel (v2.0)
 
+<img width="962" height="562" alt="image" src="https://github.com/user-attachments/assets/b92baa62-4746-4d26-84f2-ea9b3b1e9faa" />
+
+
 Creates professional Sankey (flow) diagrams from a **From | To | Value** table, drawn as native Excel
 shapes, with a **Sankey ribbon tab** and **automatic updates** when your data changes.
 
