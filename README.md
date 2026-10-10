@@ -17,8 +17,8 @@ shapes, with a **Sankey ribbon tab** and **automatic updates** when your data ch
 ## Quick install (automatic)
 **Windows:** close Excel, then double-click **`Install-Sankey-Windows.cmd`**. It builds `Sankey.xlam` from the code files, adds the ribbon and enables the add-in; the Sankey buttons appear on the **Add-ins** tab. It briefly turns on Excel's *Trust access to the VBA project object model* and restores your previous setting; if your IT policy locks that setting, use the manual steps below. Remove with **`Uninstall-Sankey-Windows.cmd`**.
 
-**macOS (Microsoft 365):** quit Excel, then double-click **`Install-Sankey-macOS.command`** (or run `bash Install-Sankey-macOS.command` in Terminal; if macOS blocks a downloaded file, right-click > Open). It copies `mac/Sankey.xlam` into Excel's Startup folder, and a **Sankey** tab appears next to Home. Choose *Enable Macros* if Excel asks. Remove with **`Uninstall-Sankey-macOS.command`**.
-The Mac version differs slightly: node colors are entered as hex codes (Excel for Mac has no color dialog for macros), and the buttons live on their own Sankey tab because Mac Excel has no Add-ins tab.
+**macOS (Microsoft 365):** quit Excel, then double-click **`Install-Sankey-macOS.command`** (or run `bash Install-Sankey-macOS.command` in Terminal; if macOS blocks a downloaded file, right-click > Open). It copies `mac/Sankey.xlam` into Excel's Startup folder; the two Sankey icons (create chart, sample data) appear on an **Add-ins** tab, and the **Sankey** design tab appears when you click the chart, as on Windows. Choose *Enable Macros* if Excel asks. Remove with **`Uninstall-Sankey-macOS.command`**.
+The Mac version differs slightly: node colors are entered as hex codes (Excel for Mac has no color dialog for macros), and instead of a contextual tab under Shape Format, the Sankey design tab is shown while the chart is selected (it can take up to a second to appear).
 
 **Updating `mac/Sankey.xlam`:** it is built on a Windows PC with Excel: close Excel, run `mac\Build-Mac-Addin.cmd`, and commit the new file.
 
