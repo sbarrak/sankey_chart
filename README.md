@@ -1,4 +1,4 @@
-# Sankey Chart Builder for Excel (Windows and Mac), PowerBI and html for quick viz
+# Sankey Chart Builder - Free for Excel (Windows and Mac), PowerBI and Web
 
 <img width="962" height="562" alt="image" src="https://github.com/user-attachments/assets/b92baa62-4746-4d26-84f2-ea9b3b1e9faa" />
 
